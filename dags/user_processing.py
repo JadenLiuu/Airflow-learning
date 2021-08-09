@@ -15,6 +15,7 @@ default_args = {
 
 AIRFLOW_HOME = os.environ.get('AIRFLOW_HOME')
 TMP_USER_CSV = '/tmp/processed_ser.csv'
+DAG_NAME = 'user_processing'
 
 def _run_process_user(ti):
     users = ti.xcom_pull(task_ids=['extracting_user'])
@@ -33,7 +34,7 @@ def _run_process_user(ti):
     df_processed_user.to_csv(TMP_USER_CSV, index=None, header=False)
 
 
-with DAG('user_processing', schedule_interval='@daily', default_args=default_args, catchup=False) as dag:
+with DAG(DAG_NAME, schedule_interval='@daily', default_args=default_args, catchup=False) as dag:
     # Define task - create table
     sql_command = ''
     with open(f'{AIRFLOW_HOME}/sql/user_processing_create_table.sql', 'r') as fs:
