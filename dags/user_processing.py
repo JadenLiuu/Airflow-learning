@@ -9,6 +9,7 @@ from pandas import json_normalize
 import os
 import json
 
+# The args we always defined: start_date, schedule_interval
 default_args = {
     'start_date': datetime(2021,8,8)
 }
