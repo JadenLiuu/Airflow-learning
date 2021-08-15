@@ -36,7 +36,7 @@ def get_tasks_of_task():
         return tasks_of_groups
 
 def get_tasks_in_chain():
-    group = list()
+    groups = list()
     for g in range(1,3):
         with TaskGroup(f'group{g}') as group:
             ls_subgroup = []
@@ -49,9 +49,9 @@ def get_tasks_in_chain():
             task1 = DummyOperator(task_id='task1')
             task2 = DummyOperator(task_id='task2')
             task1 >> ls_subgroup >> task2
-            group.append(group)
+            groups.append(group)
 
-    for i in range(1, len(group)):
-        group[i-1] >> group[i]
+    for i in range(1, len(groups)):
+        groups[i-1] >> groups[i]
 
-    return group
+    return groups
