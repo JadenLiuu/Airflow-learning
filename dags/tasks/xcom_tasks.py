@@ -5,29 +5,24 @@ from airflow.operators.dummy_operator import DummyOperator
 from random import uniform
 
 
-def _training_model(ti):
-    acc = uniform(1.0, 100.0)
+def __training_model(ti):
+    acc = uniform(0.0, 100.0)
     print(f'model\'s accuracy: {acc}')
     ## return `acc` in each tasks, passing data via xcom automaticly
     # return acc
     ti.xcom_push(key='model_accuracy', value=acc)
 
 
-def _choose_best_model(ti, num_models):
+def __choose_best_model(ti, num_models):
     print('Choose best model')
     ls_taskid = [f'training_models.train_model_{i+1}' for i in range(num_models)]
     accs = ti.xcom_pull(key='model_accuracy', task_ids=ls_taskid)
-    print(accs)
-    ti.xcom_push(key='best_model', value=max(accs))
-
-
-def _is_accurate(ti):
-    best_acc = ti.xcom_pull(key='best_model', task_ids='get_best_model')
+    best_acc = max(accs)
     print(f'Best acc = {best_acc:0.2f}%')
     if best_acc > 80.0:
-        return ('accurate') # The next task_id should be `accurate`
+        return 'accurate' # The next task_id should be `accurate`
     else:
-        return ('inaccurate') # The next task_id should be `inaccurate`
+        return 'inaccurate' # The next task_id should be `inaccurate`
 
 
 def get_download_task():
@@ -42,31 +37,27 @@ def get_tasks_of_models(num_models):
         for i in range(num_models):
             traing_model = PythonOperator(
                 task_id = f'train_model_{i+1}',
-                python_callable=_training_model
+                python_callable=__training_model
             )
         return group
 
 
-def get_best_model(num_models):
-    traing_model = PythonOperator(
-        task_id = f'get_best_model',
-        python_callable=_choose_best_model,
+def choose_best_model(num_models):
+    best_model = BranchPythonOperator(
+        task_id = f'best_model',
+        python_callable=__choose_best_model,
         op_kwargs={'num_models': num_models}
-    )
-    return traing_model
-
-
-def braching():
-    is_accurate = BranchPythonOperator(
-        task_id='is_accurate',
-        python_callable=_is_accurate,
-        do_xcom_push=False
     )
 
     accurate = DummyOperator(task_id='accurate', do_xcom_push=False)
     inaccurate = DummyOperator(task_id='inaccurate', do_xcom_push=False)
 
+    return best_model, accurate, inaccurate
 
-    is_accurate >> [accurate, inaccurate]
-    return is_accurate
 
+def get_storing_task():
+    storing_model = DummyOperator(
+        task_id='storing_model',
+        trigger_rule='none_failed_or_skipped'
+    )
+    return storing_model
