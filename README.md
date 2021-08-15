@@ -24,3 +24,4 @@
     ```
 - Bash operator would store xcom automatically, to cancel the storing action
     - add `do_xcom_push=False` in the task.
+- learn `BranchPythonOperator` and 'trigger_rule'
