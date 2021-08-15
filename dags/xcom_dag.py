@@ -16,5 +16,6 @@ with DAG('xcom_dag', schedule_interval='@daily', default_args=default_args, catc
     downloading_data = get_download_task()
     processing_tasks = get_tasks_of_models(NUM_MODELS)
     choose_best_model = get_best_model(NUM_MODELS)
+    is_accurate = braching()
 
-    downloading_data >> processing_tasks >> choose_best_model
+    downloading_data >> processing_tasks >> choose_best_model >> is_accurate
