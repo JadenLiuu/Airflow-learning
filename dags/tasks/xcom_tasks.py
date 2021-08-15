@@ -1,6 +1,7 @@
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.bash import BashOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
+from airflow.operators.dummy_operator import DummyOperator
 from random import uniform
 
 
@@ -18,6 +19,15 @@ def _choose_best_model(ti, num_models):
     accs = ti.xcom_pull(key='model_accuracy', task_ids=ls_taskid)
     print(accs)
     ti.xcom_push(key='best_model', value=max(accs))
+
+
+def _is_accurate(ti):
+    best_acc = ti.xcom_pull(key='best_model', task_ids='get_best_model')
+    print(f'Best acc = {best_acc:0.2f}%')
+    if best_acc > 80.0:
+        return ('accurate') # The next task_id should be `accurate`
+    else:
+        return ('inaccurate') # The next task_id should be `inaccurate`
 
 
 def get_download_task():
@@ -44,3 +54,19 @@ def get_best_model(num_models):
         op_kwargs={'num_models': num_models}
     )
     return traing_model
+
+
+def braching():
+    is_accurate = BranchPythonOperator(
+        task_id='is_accurate',
+        python_callable=_is_accurate,
+        do_xcom_push=False
+    )
+
+    accurate = DummyOperator(task_id='accurate', do_xcom_push=False)
+    inaccurate = DummyOperator(task_id='inaccurate', do_xcom_push=False)
+
+
+    is_accurate >> [accurate, inaccurate]
+    return is_accurate
+
